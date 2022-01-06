@@ -133,16 +133,61 @@ class AutomaticOracle(BaseOracle):
         
         self.time = 0
         
+        # new
+        self.prev_paths = None
+        self.news = []
+        self.sames = []
+        
     def func(self, t_parameter):
         self.update_shortest_paths(t_parameter)
         return - np.dot(self.distances, self.corr_values) 
 
     #correct answer if func calculated flows!
     def grad(self, t_parameter):
+        def find_paths():
+            from collections import defaultdict
+            paths = defaultdict(list)
+            # TODO: mb better to all vertices?!!
+            for v in sorted_vertices:
+                q = v
+                while self.pred_map[q] != q:
+                    paths[v].append(q)
+                    q = self.pred_map[q]
+                if (self.pred_map[q] == q) and (q != self.source):
+                    print('COLLAPSE', q, self.source)
+            return paths 
+
+        def count_changes():
+            new, same = 0, 0
+            for i in new_paths.keys():
+                #print(self.prev_paths[i])
+                #print(new_paths[i])
+                if len(self.prev_paths[i]) != len(new_paths[i]):
+                    new += 1
+                elif (np.array(self.prev_paths[i]) == np.array(new_paths[i])).all():
+                    same += 1
+                else:
+                    new += 1
+            return new, same
+
+        # old
         sorted_vertices = get_tree_order(self.graph.nodes_number, self.corr_targets, self.pred_map)
         flows = get_flows(self.graph.nodes_number, self.graph.links_number, 
                           self.corr_targets, self.corr_values, 
                           self.pred_map, sorted_vertices, self.pred_to_edges, t_parameter)
+        
+        # -- new --
+        #if self.source == 31:
+        #print('Use autooracle.grad')
+        new_paths = find_paths()
+        if self.prev_paths is not None:
+            new, same = count_changes()
+            self.news.append(new)
+            self.sames.append(same)
+            #print(f'Old={same}, new={new}, len={len(sorted_vertices)}, len_paths={len(new_paths)}')
+        self.prev_paths = new_paths.copy()
+        # ---------
+        
         return - flows
         
     def update_shortest_paths(self, t_parameter):

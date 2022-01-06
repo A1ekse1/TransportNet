@@ -53,7 +53,10 @@ def frank_wolfe_method(oracle, primal_dual_oracle,
      
     result = {'times': t_weighted, 'flows': flows,
               'iter_num': it_counter,
-              'res_msg' : 'success' if success else 'iterations number exceeded'}
+              'res_msg' : 'success' if success else 'iterations number exceeded',
+             # new
+              'pm_oracle': primal_dual_oracle,
+             }
     if save_history:
         result['history'] = history.dict
     if verbose:

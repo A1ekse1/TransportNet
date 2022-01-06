@@ -6,6 +6,8 @@ import graph_tool.topology as gtt
 import numpy as np
 import math
 
+from dijkstra import DistancesFinderHeapq
+
     
 class TransportGraph:
     def __init__(self, graph_table, nodes_number, links_number, maxpath_const = 3):
@@ -39,6 +41,10 @@ class TransportGraph:
         self.graph.edge_properties["freeflow_times"] = ep_freeflow_time
         self.graph.edge_properties["capacities"] = ep_capacity
 
+        #  ------- new ----------
+        self.distance_finder = DistancesFinderHeapq(self.graph, smart=True)
+        #self.distance_finder = DistancesFinderHeapq(self.graph, smart=False)
+        # -------------------
     
     @property
     def edges(self):
@@ -62,12 +68,19 @@ class TransportGraph:
         if targets is None:
             targets = np.arange(self.nodes_number)
         ep_time_map = self.graph.new_edge_property("double", vals = times)
-        distances, pred_map = gtt.shortest_distance(g = self.graph,
+#         distances, pred_map = gtt.shortest_distance(g = self.graph,
+#                                                     source = source,
+#                                                     target = targets,
+#                                                     weights = ep_time_map,
+#                                                     pred_map = True)
+#         return distances, pred_map.a
+        # ----------- new ----------
+        return self.distance_finder.shortest_distance(g = self.graph,
                                                     source = source,
                                                     target = targets,
                                                     weights = ep_time_map,
                                                     pred_map = True)
-        return distances, pred_map.a
+        # -------------------------
 
 #    def nodes_number(self):
 #        return self.nodes_number
